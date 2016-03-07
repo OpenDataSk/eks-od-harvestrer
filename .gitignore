@@ -60,3 +60,7 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+# Files downloaded by the script
+eks-zakazky.zip
+eks-zmluvy.zip

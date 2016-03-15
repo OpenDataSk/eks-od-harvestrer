@@ -43,7 +43,7 @@ cfg_parser.read(os.path.expanduser(EKS_OD_USER_CONFIG))
 try:
     eks_user = cfg_parser.get('eks', 'user')
     eks_password = cfg_parser.get('eks', 'password')
-except ConfigParser.NoOptionError as e:
+except (ConfigParser.NoOptionError, ConfigParser.NoSectionError) as e:
     print '%s (file %s)' % (e, EKS_OD_USER_CONFIG)
     sys.exit(-1)
 

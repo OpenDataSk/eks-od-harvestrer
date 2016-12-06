@@ -28,13 +28,46 @@
 import ConfigParser
 import mechanize
 import os
+import os.path
 import sys
+import zipfile
+from datetime import datetime, timedelta
 
 
 EKS_OD_HOMEPAGE_URL = 'https://portal.eks.sk/Reporty/OtvoreneUdaje'
-EKS_OD_TRADES_URL = 'https://portal.eks.sk/reporty/otvoreneudaje/generujzakazkycsv'
-EKS_OD_CONTRACTS_URL = 'https://portal.eks.sk/reporty/otvoreneudaje/generujzmluvycsv'
 EKS_OD_USER_CONFIG = '~/.eks-od-harvestrer.ini'
+EKS_OD_DATA_URLS = {
+    'Zakazky': {
+        'url': 'https://portal.eks.sk/Reporty/OtvoreneUdaje/GenerujZakazkyCsv/%Y/%m',
+        'filename': 'eks-zakazky-%Y%m.zip',
+        'subdir': 'zakazky'
+    },
+    'Zmluvne vztahy': {
+        'url': 'https://portal.eks.sk/Reporty/OtvoreneUdaje/GenerujZmluvyCsv/%Y/%m',
+        'filename': 'eks-zmluvy-%Y%m.zip',
+        'subdir': 'zmluvy'
+    },
+    'Zakazky a zmluvne vztahy': {
+        'url': 'https://portal.eks.sk/Reporty/OtvoreneUdaje/GenerujZakazkyZmluvyCsv/%Y/%m',
+        'filename': 'eks-zakazky_a_zmluvy-%Y%m.zip',
+        'subdir': 'zakazky_a_zmluvy'
+    },
+    'Referencie': {
+        'url': 'https://portal.eks.sk/Reporty/OtvoreneUdaje/GenerujZoznamReferencii/%Y/%m',
+        'filename': 'eks-referencie-%Y%m.zip',
+        'subdir': 'referencie'
+    },
+    'Opisne formulare': {
+        'url': 'https://portal.eks.sk/Reporty/OtvoreneUdaje/GenerujZoznamOpisnychFormularov/%Y/%m',
+        'filename': 'eks-opisne_formulare-%Y%m.zip',
+        'subdir': 'opisne_formulare'
+    },
+    'Kontraktacne ponuky': {
+        'url': 'https://portal.eks.sk/Reporty/OtvoreneUdaje/GenerujKontraktacnePonukyCsv/%Y/%m',
+        'filename': 'eks-kontraktacne_ponuky-%Y%m.zip',
+        'subdir': 'kontraktacne_ponuky'
+    }
+}
 
 
 # load configuration
@@ -48,7 +81,7 @@ except (ConfigParser.NoOptionError, ConfigParser.NoSectionError) as e:
     sys.exit(-1)
 
 # visit Open Data homepage and login
-print 'login ...'
+print 'login ...',
 browser = mechanize.Browser()
 browser.open(EKS_OD_HOMEPAGE_URL)
 browser.select_form(nr = 0)
@@ -61,12 +94,32 @@ if page_body.find("Odhlásiť sa") < 0:
     sys.exit(-2)
 print 'OK'
 
-# now get trades CSV
-print 'downloading eks-zakazky.zip ...'
-browser.retrieve(EKS_OD_TRADES_URL, 'eks-zakazky.zip')
-print 'OK'
+# We're be getting data for "yesterday" to make sure we have everything.
+# (If we're going to run this script daily and get data for "now", we might
+# end up missing data between "now" and midnight.)
+yesterday = datetime.now() - timedelta(days = 1)
 
-# and get contracts CSV
-print 'downloading eks-zmluvy.zip ...'
-browser.retrieve(EKS_OD_CONTRACTS_URL, 'eks-zmluvy.zip')
-print 'OK'
+# now get all CSVs
+for dataset in EKS_OD_DATA_URLS.keys():
+    # download ZIP
+    dataset_url = yesterday.strftime(EKS_OD_DATA_URLS[dataset]['url'])
+    dataset_fn = yesterday.strftime(EKS_OD_DATA_URLS[dataset]['filename'])
+    print 'downloading "%s" from %s into %s ...' % (dataset, dataset_url, dataset_fn),
+    browser.retrieve(dataset_url, dataset_fn)
+    print 'OK'
+
+    # extract CSV (discarding dirname from ZIP archive) but into our own subdir structure
+    zip_file = zipfile.ZipFile(dataset_fn)
+    for name in zip_file.namelist():
+        (dirname, filename) = os.path.split(name)
+        our_dirname = EKS_OD_DATA_URLS[dataset]['subdir']
+        print 'extracting %s from %s into %s/%s ...' % (name, dataset_fn, our_dirname, filename),
+        if not os.path.exists(our_dirname):
+            os.makedirs(our_dirname)
+        zip_file.extract(name, our_dirname)
+        print 'OK'
+
+    # clean-up: we do not need ZIPs
+    print 'removing %s ...' % dataset_fn,
+    os.remove(dataset_fn)
+    print 'OK'

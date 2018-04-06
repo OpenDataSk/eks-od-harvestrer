@@ -66,6 +66,11 @@ EKS_OD_DATA_URLS = {
         'url': 'https://portal.eks.sk/Reporty/OtvoreneUdaje/GenerujKontraktacnePonukyCsv/%Y/%m',
         'filename': 'eks-kontraktacne_ponuky-%Y%m.zip',
         'subdir': 'kontraktacne_ponuky'
+    },
+    'Aukcne ponuky': {
+        'url': 'https://portal.eks.sk/Reporty/OtvoreneUdaje/GenerujAukcnePonukyCsv/%Y/%m',
+        'filename': 'eks-aukcne_ponuky-%Y%m.zip',
+        'subdir': 'aukcne_ponuky'
     }
 }
 

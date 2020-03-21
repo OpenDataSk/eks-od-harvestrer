@@ -64,3 +64,6 @@ target/
 # Files downloaded by the script
 eks-*.zip
 Zoznam*.csv
+/.settings/
+/.project
+/.pydevproject

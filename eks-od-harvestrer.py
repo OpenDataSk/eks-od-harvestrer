@@ -104,7 +104,7 @@ print 'OK'
 # end up missing data between "now" and midnight.)
 yesterday = datetime.now() - timedelta(days = 1)
 # Allow overriding the year/month from command line (for now very crude
-# commnad line argument handling. Later we can utilize argparse.)
+# command line argument handling. Later we can utilize argparse.)
 # Usage: eks-od-harvestrer.py YYYY-mm
 if len(sys.argv) == 2:
     yesterday = datetime.strptime(sys.argv[1], "%Y-%m")
